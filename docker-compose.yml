@@ -1,0 +1,90 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fintech_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: UTC
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./config/postgresql/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    command: >
+      postgres
+      -c config_file=/etc/postgresql/postgresql.conf
+      -c shared_preload_libraries=pg_stat_statements
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fintech_network
+
+  flyway:
+    image: flyway/flyway:10-alpine
+    container_name: fintech_flyway
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      FLYWAY_USER: ${POSTGRES_USER}
+      FLYWAY_PASSWORD: ${POSTGRES_PASSWORD}
+      FLYWAY_SCHEMAS: fintech
+      FLYWAY_LOCATIONS: filesystem:/migrations
+    volumes:
+      - ./migrations:/migrations
+    command: migrate
+    networks:
+      - fintech_network
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: fintech_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    ports:
+      - "${PGADMIN_PORT}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fintech_network
+
+  postgrest:
+    image: postgrest/postgrest:v12.2.3
+    container_name: fintech_postgrest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PGRST_DB_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      PGRST_DB_SCHEMAS: core, customer, wallet, payment, billing, reconciliation, audit
+      PGRST_DB_EXTRA_SEARCH_PATH: public, core, customer, wallet, payment, billing, reconciliation, audit
+      PGRST_DB_ANON_ROLE: ${POSTGRES_USER}
+      PGRST_SERVER_PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fintech_network
+
+volumes:
+  postgres_data:
+    name: fintech_postgres_data
+  pgadmin_data:
+    name: fintech_pgadmin_data
+
+networks:
+  fintech_network:
+    name: fintech_network
+    driver: bridge

@@ -1,0 +1,10 @@
+-- V1: Şema Oluşturma
+-- Amaç: Modüler yapı için ayrı şemalar oluştur
+
+CREATE SCHEMA IF NOT EXISTS core;
+CREATE SCHEMA IF NOT EXISTS payment;
+CREATE SCHEMA IF NOT EXISTS wallet;
+CREATE SCHEMA IF NOT EXISTS billing;
+CREATE SCHEMA IF NOT EXISTS reconciliation;
+CREATE SCHEMA IF NOT EXISTS audit;
+CREATE SCHEMA IF NOT EXISTS customer;

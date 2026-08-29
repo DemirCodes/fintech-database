@@ -1,0 +1,25 @@
+# Environment
+.env
+
+# Docker
+postgres_data/
+pgadmin_data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Backup
+backups/
+*.dump
+*.sql.gz

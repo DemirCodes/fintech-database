@@ -17,7 +17,7 @@ Bu proje, multi-tenant bir fintech/ödeme sistemi veritabanı tasarımıdır. Am
 
 ---
 
-## 🎯 Hedeflenen Database Engineer Seviyesi
+## 🎯 Hedeflenen Database Engineer & Fintek Mimari Seviyesi
 
 Bu proje, aşağıdaki konuları **pratikte uygulayarak** öğrenmek için tasarlanmıştır:
 
@@ -25,8 +25,12 @@ Bu proje, aşağıdaki konuları **pratikte uygulayarak** öğrenmek için tasar
 |------|-------|
 | Schema Design & Normalization | ✅ Uygulanacak |
 | Concurrency Control (Optimistic/Pessimistic Locking) | ✅ Uygulanacak |
-| Indexing & Query Optimization | ✅ Uygulanacak |
-| Partitioning | ✅ Uygulanacak |
+| **Sorgu Planlama ve Optimizasyon (EXPLAIN ANALYZE)** | ✅ Uygulanacak |
+| **İleri Düzey Index Stratejileri (B-Tree, Hash, GIN, GiST, BRIN)** | ✅ Uygulanacak |
+| **Partitioning ve Sharding Stratejileri** | ✅ Uygulanacak |
+| **JOIN Stratejileri (Nested Loop, Hash Join, Merge Join)** | ✅ Uygulanacak |
+| **Caching ve Önbellek Stratejileri (Query cache, Redis, Materialized Views)** | ✅ Uygulanacak |
+| **Veritabanı İzleme ve Bakım (Vacuum, pg_stat_statements, Log Analizi)** | ✅ Uygulanacak |
 | Stored Procedures & Triggers | ✅ Uygulanacak |
 | Audit Trail & CDC | ✅ Uygulanacak |
 | Outbox Pattern | ✅ Uygulanacak |
@@ -181,16 +185,37 @@ Trigger ile kontrol edilecek geçişler:
 
 ---
 
-## 📈 Index Stratejisi
+## 📈 Gelişmiş Performans ve Optimizasyon Başlıkları
 
-| Index | Amaç |
-|-------|------|
-| `idx_transactions_customer_time` | Müşteri işlem geçmişi sorguları |
-| `idx_ledger_wallet_time` | Bakiye hesaplama ve mutabakat |
-| `idx_outbox_pending` | Pending event'leri hızlı çekme (partial index) |
-| `idx_chargebacks_open` | Açık chargeback'leri listeleme |
-| `idx_reconciliation_mismatched` | Eşleşmemiş kalemleri bulma |
-| `idx_installment_due` | Geciken taksitleri tespit etme |
+### 1. Sorgu Planlama ve Optimizasyon (`EXPLAIN ANALYZE`)
+- Yavaş sorguların tespit edilmesi ve yürütme planlarının (Execution Plans) okunması.
+- Maliyet (Cost) hesaplamalarının incelenmesi ve darboğazların (bottleneck) hangi adımda oluştuğunun saptanması.
+
+### 2. İleri Düzey Index Stratejileri
+- **B-Tree:** Standart eşitlik ve aralık aramaları için.
+- **Hash:** Eşitlik karşılaştırmaları (`=`) için özel indexler.
+- **GIN:** Full-text search ve JSONB veri yapıları için.
+- **GiST:** Coğrafi ve geometrik veri tipleri için.
+- **BRIN (Block Range Index):** Tarih/zaman gibi fiziksel olarak sıralı çok büyük tablolar için düşük maliyetli indexler.
+
+### 3. Partitioning ve Sharding
+- **Partitioning:** Çok büyük tabloların (ör. `transactions`, `audit_logs`) mantıksal olarak alt tablolara bölünmesi (Partition Pruning optimizasyonu).
+- **Sharding:** Veritabanının yatayda farklı sunuculara dağıtılması stratejileri (Çok büyük hacimli veriler ve tarihsel arşiv senaryoları).
+
+### 4. JOIN Stratejileri
+- **Nested Loop:** Küçük veri setlerinde ve index kullanımına uygun durumlarda.
+- **Hash Join:** Büyük veri setlerindeki eşitlik join'leri için bellek tabanlı eşleştirme.
+- **Merge Join:** Sıralı veri setlerinin birleştirilmesinde yüksek verimlilik.
+
+### 5. Caching ve Önbellek Stratejileri
+- Query cache yaklaşımları.
+- Application-level caching (Redis) entegrasyonu.
+- Ağır raporlama ve analitik yükler için `Materialized Views` kullanımı.
+
+### 6. Veritabanı İzleme ve Bakım
+- **Vacuum & Autovacuum:** Ölü tuple'ların (dead tuples) temizlenmesi ve tablo şişmesinin (bloat) önlenmesi.
+- **`pg_stat_statements`:** En maliyetli ve yavaş çalışan sorguların sürekli izlenmesi.
+- Log analizi ve veritabanı sağlık denetimleri.
 
 ---
 
@@ -206,7 +231,7 @@ Trigger ile kontrol edilecek geçişler:
 - Optimistic lock olmadan: lost update gözle
 - Version kolonu ile: ikinci işlem hata almalı
 
-### 3. Partitioning Testi
+### 3. Partitioning & Sorgu Optimizasyonu Testi
 - Partition'lı ve partition'sız `transactions` tablosunda aynı sorguyu çalıştır
 - `EXPLAIN ANALYZE` ile cost farkını ölç
 - Partition pruning çalışıyor mu kontrol et
@@ -216,9 +241,9 @@ Trigger ile kontrol edilecek geçişler:
 - Tutarsızlık varsa tespit et
 - Reconciliation script çalıştır
 
-### 5. Index Performans Testi
-- Index'li ve index'siz sorguları karşılaştır
-- Partial index'in tam index'e göre avantajını ölç
+### 5. Index ve Performans Testi
+- Doğru index seçimi (B-Tree, GIN, BRIN vb.) ile sorgu sürelerini kıyasla
+- `pg_stat_statements` üzerinden sorgu maliyetlerini raporla
 
 ---
 
@@ -233,7 +258,7 @@ Trigger ile kontrol edilecek geçişler:
 ### Faz 2: Schema
 - [ ] Tabloların oluşturulması
 - [ ] Constraint'lerin eklenmesi
-- [ ] Index'lerin oluşturulması
+- [ ] Index'lerin oluşturulması (B-Tree, GIN, BRIN vb.)
 - [ ] Trigger'ların yazılması
 
 ### Faz 3: Test Verisi
@@ -248,8 +273,8 @@ Trigger ile kontrol edilecek geçişler:
 - [ ] Reconciliation testi
 
 ### Faz 5: Optimizasyon
-- [ ] `EXPLAIN ANALYZE` ile sorgu analizi
-- [ ] Gerekirse index güncellemeleri
+- [ ] `EXPLAIN ANALYZE` ile sorgu analizi ve tuning
+- [ ] `pg_stat_statements` ile yavaş sorgu optimizasyonu
 - [ ] Partition arşivleme stratejisi
 - [ ] Performance baseline çıkarma
 
